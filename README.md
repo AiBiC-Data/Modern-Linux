@@ -174,3 +174,192 @@ access 시스템 콜은 프로세스가 특정 파일에 접근할 수 있는지
 
 등
 
+# 셸과 스크립팅
+
+## 기본개요
+
+- **터미널**
+    - 텍스트로 된 사용자 인터페이스를 제공하는 프로그램 → 텍스트를 읽어 화면에 표시하는 기능
+- **셸**
+    - 터미널 내부에서 실행되며 명령 인터프리터 역할을 하는 프로그램
+    - 입출력 처리, 변수 지원, 명령 실행 및 상태 처리, sh로 정의하며 bash셸이 기본
+        
+        ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/eefca27f-83db-46df-bf21-e76319f42bb5)
+
+        
+- **셸의 기본 기능**
+    - 스트림
+        - 입출력을 위한 세가지 기본 파일 디스크립터(FD)를 모든 프로세스에 제공 → (stdin, stdout, stderr)
+        - 특별하게 지정하지 않는 한 키보드에서 입력을 가져오고 출력을 화면에 전달
+        - & ⇒ 명령 마지막에 배치되며 백그라운드에서 명령을 실행
+            
+            ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/72674f9f-525e-49bc-814e-60e4a08d47da)
+
+            
+        - \ ⇒ 긴 명령의 가독성을 높이기 위해 다음 행에서 명령을 계속할 때 사용
+            
+            ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/e67174e3-4a58-426d-b795-d96c3d78d494)
+
+            
+        - | ⇒ 한 프로세스의 stdout 값을 다음 프로세스의 stdin과 연결해 데이터를 파일에 임시로 저장하지 않고 바로 전달
+            
+            ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/7b8358a3-2957-456a-8b3f-410757498c40)
+
+            
+    - 변수
+        - 리눅스가 노출하는 구성 항목을 처리하려는 경우
+        - 스크립트에서 사용자에게 값을 대화 형식으로 질문하려는 경우
+        - 긴 값을 한 번 정의해 입력을 줄이려는 경우
+        - 종류
+            - 환경 변수 ⇒ 셸 전체 설정. env 명령어로 목록을 나열
+            - 셸 변수 ⇒ 현재 실행 상황에 유효, 하위 프로세스는 셸 변수 상속X
+        - 배시에서 export 명령어를 사용해 환경변수를 만들 수 있다. 변수의 값에 접근하고 싶을 때는 앞에 $를 붙이고 변수를 제거하고 싶을 때는 unset 사용
+            
+            ```bash
+            $ set MY_VAR=42      # MY_VAR이라는 셸 변수슬 생성하고 값을 42로 지정 
+            $ set | grep MY_VAR  # 셸 변수를 나열하고 MY_VAR 필터링. _= ->환경 변수로 내보내지 않음
+            _=MY_VAR=42
+            
+            $ export MY_GLOBAL_VAR = "fun with vars" # 새 환경변수 생성
+            
+            $ set | grep 'MY_*'  # 셸 변수 나열하고 MY_로 시작하는 변수들 필터링
+            MY_GLOBAL_VAR='fun with vars'
+            _=MY_VAR=42
+            
+            $ env | grep 'MY_*'  # 환경 변수 나열
+            MY_GLOBAL_VAR=fun with vars
+            
+            $ bash               # MY_VAR 상속하지 않는 현재 세션의 자식 프로세스 생성
+            $ echo $MY_GLOBAL_VAR
+            fun with vars
+            
+            $ set | grep 'MY_*'  # MY_GLOBAL_VAR만 나온다
+            MY_GLOBAL_VAR='fun with vars'
+            
+            $ exit      # 자식 프로세스 종료 후 MY_VAR 셸 변수 제거하고 나열
+            $ unset $MY_VAR
+            $ set | grep 'MY_*'
+            MY_GLOBAL_VAR='fun with vars' 
+            ```
+            
+    - 종료 상태
+        - 명령 실행 완료를 명령 호출자에게 종료 상태를 이용해 알린다. 리눅스 명령은 종료 될때 상태를 반환하고 정상적으로 종료되면 0, 비정상 종료일 경우 1~255 사이의 값으로 실패를 나타낸다.
+    - 내장 명령어
+        - help를 통해 내장 명령어 목록을 나열 할 수 있고 그 외의 명령어들은 /usr/bin이나 /usr/sbin에 있는 셸 외부 프로그램.
+    - 작업 제어
+        
+        명령어를 입력하면 그 명령은 일반적으로 화면과 키보드를 제어하며 포어그라운드에서 실행. 백그라운드에서 실행하려면 마지막에 & 넣고, 셸을 닫은 후에도 백그라운드 프로세스를 계속 실행하려면 nohup 명령을 앞에 추가. 실행중인 프로세스를 제거하려면 강제성과 함께 kill 명령 사용.
+        
+
+## 모던 리눅스 명령어(참고)
+
+- exa로 디렉터리 내용 나열
+    - Rust언어로 개발되어 ls 대체, 색일 들어가서 보기 좋아지고 몇가지 기능 더해짐
+    - [https://www.lesstif.com/lpt/directory-ls-exa-119963840.html](https://www.lesstif.com/lpt/directory-ls-exa-119963840.html)
+- bat로 파일 내용 보기
+    - cat 대체, 구문을 강조 표시 할 수 있고 인쇄할 수 없는 문자 보여주고 깃 지원
+    - [https://www.lesstif.com/lpt/cat-linux-bat-119963780.html](https://www.lesstif.com/lpt/cat-linux-bat-119963780.html)
+- rg로 파일에서 컨텐츠 찾기
+    - find + grep 대체
+    - [https://www.lesstif.com/lpt/grep-ripgrep-119963754.html](https://www.lesstif.com/lpt/grep-ripgrep-119963754.html)
+
+## 일반 작업
+
+diff - 파일 비교, head - 상위 몇 줄 출력, tail - 하위 몇 줄 출력
+
+## 터미널 멀티플렉서
+
+ **tmux** 또는 **screen**을 이용하여 **세션을 유지(**screen은 이제 잘 안 쓰임)
+
+**<tmux 실행 순서>**
+
+| 구분 | 명령어 |
+| --- | --- |
+| tmux 실행 | tmux  |
+| srun 등의 작업 실행 |  |
+| tmux 세션 유지하고 나가기 | ctrl + b 누르고 d키 누르기 |
+| 특정 이름으로 세션 만들기 | tmux new -s 세션이름 |
+
+**<tmux 세션 다시 접속하기>**
+
+| 구분 | 명령어 |
+| --- | --- |
+| 세션 리스트 확인 | tmux ls |
+| 세션 attach | tmux attach-session -t 세션번호 |
+| 세션 kill | tmux kill-session -t 세션번호 |
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/cb7f7798-40e8-4c99-b851-7c2f9f95a286)
+
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/43e2f397-fff5-4e33-a85e-fa4a90fa66bd)
+
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/2eb5dc29-22e5-4ef9-a5e6-e7fb5608fe9b)
+
+
+## 스크립팅
+
+### 기본 개요
+
+- 고급 데이터 유형
+    - 셸은 일반적으로 모든 것을 문자열로 취급하지만 배열과 같은 일부 고급 데이터 유형은 지원한다.
+        
+        ```bash
+        	os=('Linux' 'macOS' 'Windows'  # 요소가 3개인 배열 선언
+        echo "${os[0]}"  # 첫번째 요소에 접근
+        numberofos="${#os[@]}"  # 배열의 길이를 가져온다.
+        ```
+        
+- 흐름 제어
+    - 스크립트에서 분기(if) 또는 반복(for와 while)을 통해 특정 조건에 따라 실행되게 할 수  있다.
+        
+        ```bash
+        for afile in /tmp/* ; do  # 디렉터리를 반복하며 각 파일명을 출력하는 루프
+        	echo "$afile"
+        done
+        
+        for i in {1..10}; do  # 범위 루프
+        	echo "$i"
+        done
+        
+        while true; do  # 무한 루프 (ctrl+c로 탈출)
+        	...
+        done
+        ```
+        
+- 함수
+    - 셸은 스크립트를 위에서 아래로 해석하므로 함수는 미리 정의한 뒤에 사용
+- 고급 I/O
+    - read를 사용하면 런타임 입력을 유도할 때 사용할 수 있는 stdin에서 사용자 입력을 읽을 수 있다. 또 echo 대신 printf를 사용하는 것도 좋다.
+
+### 작성
+
+텍스트 파일은 첫 번째 행에서 **#!로 작성하는 shebang**을 사용해서 선언해야 한다.
+
+chmod+x로 권한을 변경해주어야 한다.(chmod 750이 좋다)
+
+### 우수 사례
+
+errexit과 pipfail 등을 이용한다
+
+암호같은 밑감 정보 하드코딩 X
+
+가능하다면 변수에 정상적인 기본값을 설정, 제공하고 사용자나 기타 소스로부터 받은 입력을 깔끔하게 정리
+
+의존성을 확인한다.
+
+에러 처리를 할 수 있도록 실행할 수 있는 지침을 제공
+
+메인 블럭의 스크립트를 인라인으로 문서화& 가독성 높이기
+
+버전 관리
+
+스크립트를 린트하고 테스트
+
+### 예제 - 깃허브 사용자 정보 스크립트
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/6e7ae5e8-e618-4daa-b956-cca0fc19e4d3)
+
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/df8ee9b4-1f0e-493e-b4ff-3c24e7e0cb00)
+
