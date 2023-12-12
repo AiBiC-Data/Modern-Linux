@@ -841,3 +841,203 @@ procfs sysfs, devfs 가 있다.
     필요에 따라 시작, 중지, 종료, 제거할 수 있다. 도커 데몬과의 상호 작용에는 클라이언트 CLI도구(docker)를 직접 사용하며 이 CLI 도구는 데몬에 명령을 보내고 데몬은 컨테이너 빌드, 실행과 같은 작업을 각각 차례로 실행한다.
     
     컨테이너는 대화형 입력이나 데몬으로 실행 될 수 있다. docker run 명령은 환경변수, 노출할 포트, 마운트할 볼륨 같은 런타임 입력 세트와 컨테이너 이미지를 사용한다. 이 정보를 사용해 도커는 필요한 네임스페이스와 cgroup을 생성하고 컨테이너 이미지에 정의된 애플리케이션을 시작한다.
+
+  
+# 네트워킹
+
+## 기본개요
+
+## TCP/IP 스택
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/510bd6b7-82e4-4cd7-b154-8b24189b9d78)
+
+
+각 계층은 자신의 바로 위와 아래에 있는 계층만 인식하고 통신할 수 있어야 한다. 데이터는 패킷으로 캡슐화되며 각 계층은 일반적으로 해당 기능과 관련된 정보를 포함한 헤더로 데이터를 래핑한다. 
+
+- 링크계층
+    
+    스택의 가장 하부 계층으로서 하드웨어와 커널 드라이버를 다루며 물리적 디바이스 간에 패킷이 어떻게 전송되는지에 중점
+    
+- 인터넷 계층
+    
+    인터넷 프로토콜(IP)을 이용하며, 라우팅에 초점을 맞춘 계층. 네트워크를 통한 기기 간의 패킷 전송을 지원
+    
+- 전송 계층
+    
+    세션 기반의 안정적인 통신을 위한 TCP와 비 연결형 통신을 위한 UDP를 사용해 호스트 사이의 종단 간 통신을 제어하는 계층. 주로 패킷이 전송되는 방식을 다루며 여기에는 포트를 통한 시스템의 개별 서비스 지정과 데이터 무결성이 포함된다. 또한 리눅스는 소켓을 통신의 엔드포인트로 지원.
+    
+- 애플리케이션 계층
+    
+    웹, SSH, 메일과 같은 사용자 대면 도구와 앱을 다루는 계층.
+    
+
+### 링크 계층
+
+이더넷: 유선을 사용해 기기를 연결하는 네트워킹 기술로 LAN에서 자주 사용
+
+무선: 와이파이라고도 알려진 통신 프로토콜 및 방법의 한 종류로 전자기파를 사용
+
+MAC주소: MAC은 각 하드웨어마다 고유한 48비트 식별자로 각 기기를 식별하는데 사용
+
+인터페이스: 네트워크 연결.
+
+- NIC: 네트워크 인터페이스 컨트롤러(네트워크 인터페이스 카드), 네트워크에 물리적 연결을 제공한다. 네트워크의 일부가 된 NIC는 전송하려는 바이트의 디지털 표현을 전기 혹은 전자기 신호로 바꾼다.(수신 경로의 경우 반대) 즉, NIC는 수신하는 모든 물리적 신호를 소프트웨어가 처리할 수 있는 비트와 바이트로 변환.
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/0f9478d6-c8d3-4533-ba20-fa83c701456e)
+
+    
+    마지막 인터페이스는 루프백 인터페이스인 lo이며 IP가 127.0.0.1이고, 최대 전송 단위(MTU)는 패킷 크기이며 여기서는 65536바이트(크기가 클수록 처리량이 많아짐)
+    
+    eno1,eno2는 NIC이며 MAC주소가 있다(ether)
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/4e8bb5f5-51f8-4c47-b99b-d1ba1ca26e47)
+
+    
+- ARP: 주소 결정 프로토콜, MAC 주소를 IP 주소에 매핑
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/4e7b1d49-f1b0-4a66-8cc5-3af79b4d8650)
+
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/09b36f1f-7493-4b0d-88d1-cf8321886cee)
+
+    
+
+### 인터넷 계층
+
+네트워크의 한 시스템에서 다른 시스템으로 퍀킷을 라우팅하는 것과 관련이 있다.
+
+최선의 전달을 제공하고 모든 패킷을 독립적으로 취급. 그 결과 상위 계층은 패킷의 순서, 재시도, 배달 보장을 포함한 신뢰성 문제를 처리.
+
+- IPv4: TCP/IP 통신에서 엔드포인트 역할을 하는 호스트나 프로세스를 고유하게 식별하는 32비트 숫자를 정의
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/c11ecd73-31d3-4641-9d83-619e34516f8b)
+
+    
+    Classless Inter-Domain Routing (**CIDR**): 32비트 숫자 2개를 사용하여 네트워크 표시
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/e1f4268c-0bdd-41b7-919d-c0fb28be4696)
+
+    
+    - 127.0.0.0: 이 서브넷은 로컬 주소용으로 예약되어 있으며 가장 중요한 것은 루프백 주소인 127.0.0.1
+    - 169.254.0.0/16: IP 주소 관리 대행사가 예약한 예약 IP 주소이며 공용 또는 개인 IP로 할당되지 않는다
+    - 0.0.0.0: 시스템에 있는 모든 IPv4 주소를 의미.
+- IPv6: IPv4와 호환되지 않는다.
+- **ICMP**: 인터넷 제어 메시지 프로토콜
+    - 호스트 및 라우터에서 네트워크 수준 정보를 전달하는 데 사용
+    - 오류 보고: 연결 불가능한 호스트, 네트워크, 포트, 프로토콜
+    - 에코 요청/reply(핑에 의해 사용됨)
+- 라우팅: 패킷을 보낼 위치를 패킷별로 결정
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/4fb20eca-ddac-473b-9af5-26eab5e6bb88)
+
+    
+    - 라우팅 알고리즘
+        - **link state algorithm**
+            
+            ⇒ **Dijkstra’s algorithm**
+            
+            한 노드('source')에서 다른 모든 노드로의 최소 비용 경로 계산→ 해당 노드에 **포워딩 테이블**을 제공
+            
+        - **distance vector algorithms**
+            
+            ⇒ **Bellman-form equation (dynamic programming)**
+            
+            dx(y) = x에서 y로의 최소 비용 경로 비용을 dx(y) = minv{c(x,y)+ dv(y)}라고 가정합니다
+            
+        
+
+### 전송 계층
+
+**포트**: IP주소에서 사용 가능한 서비스를 식별하는 고유한 16비트 숫자로 어떤 프로토콜이 사용되든 그 각각은 포트가 필요.
+
+0~1023(잘 알려진 포트): SSH 서버나 웹 서버 같은 데몬용. 사용하려면 높은 권한 필요
+
+1024~49151(등록된 포트): 공개적으로 문서화된 프로세스를 통해 관리
+
+49152~65535(한시적 포트): 등록할 수 없는 포트.
+
+/etc/services에서 포트와 매핑을 볼 수 있다.
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/61e01e72-54d0-4843-99a0-33e1a7d6bcdf)
+
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/d5d543dd-013d-4d0d-900c-5057516ee071)
+
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/27feef99-ce30-4308-90a7-4ad7e0a7b5a0)
+
+
+- **전송 제어 프로토콜(TCP)**
+    
+    HTTP와 SSH를 포함한 여러 고수준 프로토콜에서 사용되는 연결 지향 전송 계층 프로토콜. 이는 패킷을 순서대로 전달하는 것을 포장하고 오류 발생 시 재전송을 지원하는 세션 기반 프로토콜
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/e0f0fceb-190c-44fc-bee4-7b28fcf9153d)
+
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/4cb76235-338f-49e6-a0be-ed302e4680b8)
+
+    
+- **사용자 데이터그램 프로토콜(UDP)**
+    
+    통신 설정 없이 데이터그램이라고 부르는 메시지를 보낼 수 있는 비연결형 전송 계층 프로토콜이지만 무결성을 보장하기 위해 데이터그램 체크섬을 지원. NTP, DHCP, DNS
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/6f2c6a1b-5f10-49b3-ac12-bf36467f2612)
+
+    
+    ![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/c638f9d3-685e-436e-8691-2e344896e8e2)
+
+    
+- **소켓**
+    
+    프로세스가 소켓으로 메시지를 전송/리시브
+    
+    소켓을 문에 비유할 수 있다. 전송 프로세스가 메시지를 문 밖으로 이동, 전송 프로세스는 수신 프로세스 소켓에 메시지를 전달하기 위해 문의 다른 쪽에 있는 전송 인프라에 의존
+    
+
+## DNS
+
+인터넷의 호스트와 서비스 모두를 위해 전 세계에서 사용하는 계층적인 명명 시스템.
+
+- 호스트 이름에서 IP 주소로 변환
+- 호스트 alias 지정
+- 하중 배분
+- **DNS를 중앙 집중화하지 않는 이유?**
+    
+    - single point of failure
+    - traffic volume
+    - distant centralized database
+    - maintenance
+    
+- **DNS: 분산된 계층적 데이터베이스**
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/96d1a3c5-6720-4f72-8cb2-f0a6286ca90c)
+
+
+- 클라이언트가 [www.amazon.com](http://www.amazon.com) 주소 원할 때
+    - 클라이언트가 루트 서버를 조회하여 com DNS를 찾는다
+    - client queries .com DNS server to get [amazon.com](http://amazon.com) DNS server 클라이언트가 .com DNS 서버에서 amazon.com DNS 서버를 호출한다.
+    - [www.amazon.com](http://www.amazon.com) IP 주소를 가져온다
+- DNS 조회: dig 나 nslookup 사용
+
+![image](https://github.com/AiBiC-Data/Modern-Linux/assets/76275193/1d72dd0f-fb74-4210-ac83-37c42870f353)
+
+
+## 애플리케이션 계층 네트워킹
+
+### 웹
+
+URL: 웹에서 리소스의 ID와 위치 양쪽을 정의
+
+HTTP: 애플리케이션 계층 프로토콜과 함께 URL을 통해 사용 가능한 콘텐츠와 상호 작용하는 방법 정의, 읽기 작업을 위한 GET과 쓰기 작업을 위한 POST를 포함해 CRUD와 유사한 인터페이스 정의, 성공한 경우 2xx, 재지정의 경우 3xx, 클라이언트 오류의 경우 4xx, 서버 오류의 경우 5xx
+
+### 시큐어 셸(SSH)
+
+보안이 취약한 네트워크에서 네트워크 서비스를 안전하게 제공하기 위한 암호화 네트워크 프로토콜
+
+### 파일 전송
+
+scp와 rsync 사용 OR filezila 같은 ftp gui 프로그램 사용
+
+### 고급 네트워크
+
+**DHCP**(동적 호스트 구성 프로토콜): IP 주소를 호스트에 자동으로 할당할 수 있는 네트워크 프로토콜
